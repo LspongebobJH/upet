@@ -337,7 +337,7 @@ def relax_atoms_list(
 
     if relaxer_type == "batch":
 
-        relaxer = BatchRelaxer(calc.potential, fmax=fmax, filter="FRECHETCELLFILTER", max_natoms_per_batch=max_natoms_per_batch)
+        relaxer = BatchRelaxer(calc, fmax=fmax, filter="FRECHETCELLFILTER", max_natoms_per_batch=max_natoms_per_batch)
         _atoms_list = deepcopy(atoms_list)
         relaxer.relax(_atoms_list)
         relaxed_atoms_list = list(relaxer.final_atoms.values())

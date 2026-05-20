@@ -13,13 +13,9 @@ from ase.io import read
 from ase.units import GPa
 from sklearn.metrics import mean_absolute_error
 from tqdm import tqdm
+
+from upet.calculator import UPETCalculator
 from utils import resolve_aselmdb_paths, resolve_xyz_paths, Logger
-
-from upet import get_upet, save_upet
-from metatrain.cli.eval import eval_model
-from omegaconf import OmegaConf
-
-from ase.io import read
 
 rank = int(os.environ.get("RANK", 0))
 local_rank = int(os.environ.get("LOCAL_RANK", 0))
@@ -73,142 +69,18 @@ def save_results(args, results, logger):
     logger(f"Results saved to: {output_file}")
     return output_file
 
-import re
-import numpy as np
-from ase import Atoms
-
-def read_xyz_efs(path):
-    frames = []
-    with open(path) as f:
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            natoms = int(line.strip())
-            comment = f.readline()
-
-            # --- cell ---
-            lat = re.search(r'Lattice="([^"]+)"', comment)
-            cell = np.array(lat.group(1).split(), dtype=float).reshape(3, 3) if lat else None
-
-            # --- energy (frame-level scalar) ---
-            energy = None
-            e_match = re.search(r'(?<!\w)energy=([\d.eE+\-]+)', comment)
-            if e_match:
-                energy = float(e_match.group(1))
-
-            # --- figure out which columns hold pos / forces / stress ---
-            # Parse Properties= tolerantly: extract valid name:T:N triples only
-            props_match = re.search(r'Properties=(\S+)', comment)
-            col_map = {}   # name -> (start_col, count)
-            cursor = 0
-            if props_match:
-                tokens = props_match.group(1).split(':')
-                i = 0
-                while i < len(tokens):
-                    if not tokens[i]:          # skip empty (from ::)
-                        i += 1
-                        continue
-                    # look ahead for type and integer count
-                    if i + 2 >= len(tokens):
-                        break
-                    name, typ = tokens[i], tokens[i+1]
-                    # find next integer token for count
-                    j = i + 2
-                    while j < len(tokens) and not re.fullmatch(r'\d+', tokens[j]):
-                        j += 1
-                    if j >= len(tokens):
-                        break
-                    count = int(tokens[j])
-                    col_map[name] = (cursor, count)
-                    cursor += count
-                    i = j + 1
-
-            # --- per-atom stress (9 components) comes from non_conservative_stress ---
-            stress_key = next(
-                (k for k in col_map if 'stress' in k.lower() and 'feature' not in k.lower()),
-                None
-            )
-            force_key = next(
-                (k for k in col_map if 'force' in k.lower() and 'feature' not in k.lower()),
-                None
-            )
-
-            species, positions, forces, stresses = [], [], [], []
-            for _ in range(natoms):
-                cols = f.readline().split()
-
-                # species is always col 0
-                species.append(cols[0])
-
-                # pos
-                if 'pos' in col_map:
-                    s, n = col_map['pos']
-                    positions.append([float(x) for x in cols[s:s+n]])
-
-                # forces
-                if force_key:
-                    s, n = col_map[force_key]
-                    forces.append([float(x) for x in cols[s:s+n]])
-
-                # stress
-                if stress_key:
-                    s, n = col_map[stress_key]
-                    stresses.append([float(x) for x in cols[s:s+n]])
-
-            atoms = Atoms(symbols=species, positions=positions, cell=cell, pbc=True)
-
-            info = {}
-            if energy is not None:
-                info['energy'] = energy
-            arrays = {}
-            if forces:
-                arrays['forces'] = np.array(forces)
-            if stresses:
-                arrays['stresses'] = np.array(stresses)   # shape (natoms, 9)
-
-            atoms.info.update(info)
-            atoms.arrays.update(arrays)
-            frames.append(atoms)
-
-    return frames
 
 def eval(args, eval_data, logger):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    log_path = Path(args.log_path)
-    if not log_path.exists() or args.force_rerun:
-        logger("Loading calculator...")
-        ckpt_path = Path(args.ckpt_path)
-        exported_model_path = ckpt_path.with_suffix(".pt")
-        if not exported_model_path.exists():
-            save_upet(
-                checkpoint_path=str(ckpt_path),
-                output=str(exported_model_path)
-            )
-        exported_model = torch.jit.load(str(exported_model_path))
-        options = {
-            # "systems": "/mnt/shared-storage-user/lijiahang/datasets/non_equi_test_data/data.xyz"
-            "systems": "/home/lijiahang/OmniMat_mattersim_work/mattersim_work/test_data/train/data.xyz",
-        }
-        cfg = OmegaConf.create(options)
-        eval_model(
-            exported_model, 
-            options=cfg,
-            output=args.log_path,
-            batch_size=args.bs
-        )
-
-    # output_atoms_list = read_xyz_efs(args.log_path)
-    # usage
-    frames = read_xyz_efs(args.log_path)
-    atoms = frames[0]
-    print(atoms.info.get('energy'))
-    print(atoms.arrays.get('forces'))
-    print(atoms.arrays.get('stresses'))
-    
+    calc = UPETCalculator(
+        # model="pet-oam-xl", 
+        checkpoint_path=args.ckpt_path,
+        version="1.0.0", 
+        device='cuda'
+    )
 
     gt_e_list = []
     pred_e_list = []
@@ -259,12 +131,9 @@ def eval(args, eval_data, logger):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--valid_data_path", 
-        type=str, 
-        default=None, 
-        help="valid data path"
-    )
+    parser.add_argument("--valid_data_path", type=str, default=None, help="valid data path")
+    parser.add_argument("--seed", type=int, default=42, help="seed")
+    parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument(
         "--ckpt_path",
         type=str,
@@ -288,6 +157,7 @@ def main():
         action="store_true",
         help="Whether to shard evaluation data across distributed ranks using WORLD_SIZE and RANK.",
     )
+    parser.add_argument("--fidelity", type=str, default="pbe", choices=["pbe", "r2scan"], help="Fidelity level for the calculator")
     parser.add_argument(
         "--force_rerun",
         type=bool,
@@ -295,17 +165,6 @@ def main():
         action=argparse.BooleanOptionalAction,
         help="Force re-running the evaluation.",
     )
-    parser.add_argument(
-        "--bs",
-        type=int,
-        default=16,
-        help="batch size",
-    )
-
-    # unused
-    parser.add_argument("--fidelity", type=str, default="pbe", choices=["pbe", "r2scan"], help="Fidelity level for the calculator")
-    parser.add_argument("--seed", type=int, default=42, help="seed")
-    parser.add_argument("--device", type=str, default="cuda", help="device")
 
     args = parser.parse_args()
 

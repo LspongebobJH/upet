@@ -43,16 +43,16 @@ class BatchRelaxer(object):
 
     def __init__(
         self,
-        potential,
-        
+        calc,
         optimizer: Union[str, type[Optimizer]] = "FIRE",
         filter: Union[type[Filter], str, None] = None,
         fmax: float = 0.05,
         max_natoms_per_batch: int = 512,
         max_n_steps: int = 1_000_000,
+        device: str = "cuda"
     ):
-        self.potential = potential
-        self.device = potential.device
+        self.calc = calc
+        self.device = device
         if isinstance(optimizer, str):
             if optimizer.upper() not in self.SUPPORTED_OPTIMIZERS:
                 raise ValueError(f"Unsupported optimizer: {optimizer}")
@@ -93,20 +93,17 @@ class BatchRelaxer(object):
         atoms_list = []
         for idx, opt in enumerate(self.optimizer_instances):
             if self.is_active_instance[idx]:
-                atoms_list.append(opt.atoms)
+                atoms_list.append(opt.atoms.atoms)
 
         # Note: we use a batch size of len(atoms_list)
         # because we only want to run one batch at a time
-        dataloader = build_dataloader_from_atom_list(
-            atoms_list, 
-            cutoff=self.potential.model.model_args["cutoff"],
-            threebody_cutoff=self.potential.model.model_args["threebody_cutoff"],
-            batch_size=len(atoms_list), 
-            only_inference=True
-        )
-        energy_batch, forces_batch, stress_batch = self.potential.predict_properties(
-            dataloader
-        )
+        results = \
+            self.calc.calculator.compute_energy(
+                atoms_list,
+                compute_forces_and_stresses=True
+            )
+        energy_batch, forces_batch, stress_batch = \
+            results['energy'], results['forces'], results['stress']
 
         counter = 0
         self.finished = True
