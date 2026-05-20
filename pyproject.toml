@@ -31,6 +31,11 @@ dependencies = [
     "packaging",
     "platformdirs",
     "tqdm",
+    "scikit-learn",
+    "pandas",
+    "ase-db-backends",
+    "torch-sim-atomistic",
+    "metatomic-torchsim"
 ]
 
 keywords = ["machine learning", "molecular modeling"]
