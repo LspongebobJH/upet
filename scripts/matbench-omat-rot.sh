@@ -8,8 +8,8 @@ export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/bin:$PATH"
 conda activate pet
 
 # --------------- Running arguments ---------------
-log_path="./logs/matbench/pet-oam-xl-v1.0.0-0520/slice_start_end.log"
-ckpt_path="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-oam-xl-v1.0.0.ckpt"
+log_path="./logs/matbench/pet-omat-xl-v1.0.0-0520-rot/slice_start_end.log"
+ckpt_path="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-omat-xl-v1.0.0.ckpt"
 
 # --------------- Distributed Setting ---------------
 
@@ -22,8 +22,9 @@ for (( i=0; i<NPROC_PER_NODE; i++ )); do
     export RANK=$(( NODE_RANK * NPROC_PER_NODE + LOCAL_RANK ))
     python benchmark/matbench.py \
         --relaxer_type batch \
-        --max_natoms_per_batch 3072 \
+        --max_natoms_per_batch 100 \
         --distributed \
+        --rot \
         --checkpoint_path ${ckpt_path} \
         --log_path ${log_path} &
 
@@ -32,3 +33,4 @@ done
 
 wait
 echo "ALL DONE"
+sleep inf

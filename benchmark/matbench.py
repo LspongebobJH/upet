@@ -36,7 +36,8 @@ from batch_relax import BatchRelaxer
 from pymatviz.enums import Key
 from utils import Logger
 import torch
-from upet.calculator import UPETCalculator
+from upet.calculator import UPETCalculator, get_upet
+from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 
 if TYPE_CHECKING:
     import ase
@@ -312,6 +313,7 @@ def relax_atoms_list(
     logger: Logger = None,
     max_natoms_per_batch: int = 512,
     relaxer_type: str = "sequential",
+    rot: bool = False
 ) -> list[ase.Atoms]:
     """Optimize a list of atomic structures.
 
@@ -326,18 +328,23 @@ def relax_atoms_list(
         List of optimized ASE Atoms objects
     """
     logger(f"Loading model: {checkpoint_path}")
-    calc = UPETCalculator(
-            # model="pet-oam-xl", 
-            checkpoint_path=checkpoint_path,
-            version="1.0.0", 
-            device=device
-        )
+
+    model = get_upet(checkpoint_path=checkpoint_path)
+    calc = MetatomicCalculator(model, device=device)
+    if rot:
+        calc = SymmetrizedCalculator(calc, batch_size=16, include_inversion=False)
     logger(f"Model loaded... Device: {device}")
     relaxed_atoms_list = []
 
     if relaxer_type == "batch":
 
-        relaxer = BatchRelaxer(calc, fmax=fmax, filter="FRECHETCELLFILTER", max_natoms_per_batch=max_natoms_per_batch)
+        relaxer = BatchRelaxer(
+            calc, 
+            fmax=fmax, 
+            filter="FRECHETCELLFILTER", 
+            max_natoms_per_batch=max_natoms_per_batch,
+            rot=rot
+        )
         _atoms_list = deepcopy(atoms_list)
         relaxer.relax(_atoms_list)
         relaxed_atoms_list = list(relaxer.final_atoms.values())
@@ -493,6 +500,13 @@ def main():
     """Main function."""
     parser = argparse.ArgumentParser(
         description="Test mattersim model on Matbench Discovery dataset"
+    )
+    parser.add_argument(
+        "--rot",
+        type=bool,
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="Enable rotation average test-time augmentation",
     )
     parser.add_argument(
         "--relaxer_type",
@@ -656,6 +670,7 @@ def main():
         logger=logger,
         max_natoms_per_batch=args.max_natoms_per_batch,
         relaxer_type=args.relaxer_type,
+        rot=args.rot
     )
 
     # Parse results

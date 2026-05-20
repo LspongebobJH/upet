@@ -8,8 +8,8 @@ export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/bin:$PATH"
 conda activate pet
 
 # --------------- Running arguments ---------------
-log_path="./logs/matbench/pet-omat-xl-v1.0.0-0520/slice_start_end.log"
-ckpt_path="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-omat-xl-v1.0.0.ckpt"
+log_path="./logs/matbench/pet-oam-xl-v1.0.0-0520/slice_start_end.log"
+ckpt_path="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-oam-xl-v1.0.0.ckpt"
 
 # --------------- Distributed Setting ---------------
 
