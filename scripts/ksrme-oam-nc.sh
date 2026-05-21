@@ -2,6 +2,9 @@
 set -ex
 
 # --------------- Paths & Conda ---------------
+export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
+export PATH=/usr/local/nvidia/bin:$PATH
+
 cd /mnt/shared-storage-gpfs2/lijiahang1/jobs/upet
 export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/bin:$PATH"
 . /mnt/shared-storage-user/lijiahang/miniconda3/etc/profile.d/conda.sh

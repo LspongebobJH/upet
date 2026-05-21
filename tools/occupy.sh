@@ -13,6 +13,8 @@ if ! [[ "${NPROC_PER_NODE}" =~ ^[1-9][0-9]*$ ]]; then
     usage
 fi
 
+export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
+export PATH=/usr/local/nvidia/bin:$PATH
 export JOB_DIR="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet"
 cd ${JOB_DIR}
 export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/bin:$PATH"
