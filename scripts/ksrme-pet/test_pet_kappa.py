@@ -5,6 +5,7 @@ PhononDB-PBE dataset, using a PET model.
 Templated from https://github.com/janosh/matbench-discovery/blob/main/models/nequip/test_nequip_kappa.py
 """
 
+import argparse
 import json
 import os
 import traceback
@@ -23,22 +24,26 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.data import DataFilesCustomized as DataFiles
 from matbench_discovery.metrics.phonons import calc_kappa_metrics_from_dfs
 from matbench_discovery.phonons import KappaCalcParams
+
+local_rank = int(os.getenv("LOCAL_RANK", "0"))
+world_size = int(os.getenv("WORLD_SIZE", "1"))
 
 # Model configuration
 module_dir = os.path.dirname(__file__)
 model_name = "pet"
 model_variant = "oam-xl-v1.0.0"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-v1.0.0.ckpt`
 precision = "float64"
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
 dtype = torch.float64 if precision == "float64" else torch.float32
-model = load_atomistic_model(f"{model_name}-{model_variant}.pt")
+# model = load_atomistic_model(f"{model_name}-{model_variant}.pt") # jiahang: debug
+model = load_atomistic_model(f"/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-oam-xl-v1.0.0.pt")
 model.capabilities().dtype = precision
 model = model.to(dtype=dtype, device=device)
 calc = MetatomicCalculator(model, device=device, non_conservative=False)
-calc = SymmetrizedCalculator(calc, batch_size=1, include_inversion=False)
+# calc = SymmetrizedCalculator(calc, batch_size=1, include_inversion=False) # jiahang: debug, since buggy to use symmetrized one in calculate_fc2_set(), which assumes using MetatomicCalculator.
 batch_size = 1
 
 # Relaxation parameters
@@ -58,27 +63,42 @@ displacement_distance = 0.03
 ignore_imaginary_freqs = True
 
 # Task splitting:
-slurm_nodes = int(os.getenv("SLURM_NNODES", "1"))
-slurm_tasks_per_node = int(os.getenv("SLURM_NTASKS_PER_NODE", "1"))
-slurm_array_task_count = int(os.getenv("NGPUS", slurm_nodes * slurm_tasks_per_node))
-slurm_array_task_id = int(
-    os.getenv(
-        "TASK_ID", os.getenv("SLURM_ARRAY_TASK_ID", os.getenv("SLURM_PROCID", "0"))
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data_slice",
+        type=str,
+        default=None,
+        help="Slice atoms_list with START_END semantics, e.g. 0_11 selects samples 0 through 10.",
     )
-)
-slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", os.getenv("SLURM_JOBID", "debug"))
+    return parser.parse_args()
 
-# Note that we can also manually override some slurm IDs here if we need to rerun just a
-# single subset that failed on a previous eval run, for any reason, setting job_id to 0,
-# task_id to the failed task, and task_count to match
-# whatever the previous task count was (to ensure the same data splitting):
-# slurm_array_job_id = 0
-# slurm_array_task_id = 104
-# slurm_array_task_count = 128
 
+def parse_data_slice(data_slice: str, num_samples: int) -> tuple[int, int]:
+    try:
+        start_str, end_str = data_slice.split("_", maxsplit=1)
+        start, end = int(start_str), int(end_str)
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid --data_slice {data_slice!r}. Expected format START_END, e.g. 0_11."
+        ) from exc
+
+    if not (0 <= start < end <= num_samples):
+        raise ValueError(
+            f"Invalid --data_slice {data_slice!r} for {num_samples} samples. "
+            "Require 0 <= start < end <= len(atoms_list)."
+        )
+
+    return start, end
+
+
+args = parse_args()
+data_slice = args.data_slice
 
 job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{model_name}/{today}-{job_name}")
+if data_slice is not None:
+    job_name += f"-slice={data_slice}"
+out_dir = f"logs/ksrme/{model_name}-{model_variant}-{today}-{job_name}"
 os.makedirs(out_dir, exist_ok=True)
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"
 print(f"\nJob {job_name} with {model_name} started {timestamp}")
@@ -86,9 +106,21 @@ print(f"\nJob {job_name} with {model_name} started {timestamp}")
 atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 # sort by size to get roughly even distribution of comp cost across GPUs
 atoms_list = sorted(atoms_list, key=len)
-if slurm_array_task_count > 1:
-    # even distribution of rough comp cost, based on size
-    atoms_list = atoms_list[slurm_array_task_id::slurm_array_task_count]
+if data_slice is not None:
+    slice_start, slice_end = parse_data_slice(data_slice, len(atoms_list))
+    atoms_list = atoms_list[slice_start:slice_end]
+    print(
+        f"Using atoms_list[{slice_start}:{slice_end}] -> "
+        f"{slice_end - slice_start} samples (indices {slice_start} to {slice_end - 1})"
+    )
+if world_size > 1:
+    num_samples = len(atoms_list)
+    num_samples_per_proc = (num_samples + world_size - 1) // world_size
+    start = local_rank * num_samples_per_proc
+    end = min(start + num_samples_per_proc, num_samples)
+    atoms_list = atoms_list[start:end]
+    print("Be noted that atom_list has been sorted, such that index no longer corresponds to original mat_id. Use the mat_id in atoms.info to match with reference data.")
+    print(f"Local rank {local_rank} handling samples from {start} to {end}")
 
 # Save run parameters
 kappa_params: KappaCalcParams = {
@@ -106,6 +138,7 @@ kappa_params: KappaCalcParams = {
 run_params = dict(
     **kappa_params,
     n_structures=len(atoms_list),
+    data_slice=data_slice,
     struct_data_path=DataFiles.phonondb_pbe_103_structures.path,
     versions={dep: version(dep) for dep in ("numpy", "torch", "metatomic")},
 )
@@ -136,16 +169,16 @@ for idx, atoms in enumerate(tqdm(atoms_list, desc="Calculating kappa...")):
     df_kappa = pd.DataFrame(kappa_results).T
     df_kappa.index.name = Key.mat_id
     df_kappa.reset_index(drop=True).to_json(
-        f"{out_dir}/{slurm_array_task_id}_kappa.json.gz"
+        f"{out_dir}/{local_rank}_kappa.json.gz"
     )
-    df_kappa.to_json(f"{out_dir}/{slurm_array_task_id}_kappa.json.gz")
+    df_kappa.to_json(f"{out_dir}/{local_rank}_kappa.json.gz")
 
     if save_forces:
         df_force = pd.DataFrame(force_results).T
         df_force = pd.concat([df_kappa, df_force], axis=1)
         df_force.index.name = Key.mat_id
         df_force.reset_index(drop=True).to_json(
-            f"{out_dir}/{slurm_array_task_id}_force-sets.json.gz"
+            f"{out_dir}/{local_rank}_force-sets.json.gz"
         )
 
 print(f"\nResults saved to {out_dir!r}")
