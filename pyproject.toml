@@ -35,6 +35,7 @@ dependencies = [
     "pandas",
     "ase-db-backends",
     "torch-sim-atomistic",
+    "metatomic",
     "metatomic-torchsim"
 ]
 

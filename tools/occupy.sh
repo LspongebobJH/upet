@@ -13,15 +13,20 @@ if ! [[ "${NPROC_PER_NODE}" =~ ^[1-9][0-9]*$ ]]; then
     usage
 fi
 
+#!/usr/bin/env bash
+set -ex
+
+# --------------- Paths & Conda ---------------
 export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
 export PATH=/usr/local/nvidia/bin:$PATH
-export JOB_DIR="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet"
-cd ${JOB_DIR}
-export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/bin:$PATH"
-. /mnt/shared-storage-user/lijiahang/miniconda3/etc/profile.d/conda.sh
-conda activate pet
 
-NODE_RANK=${NODE_RANK} # muxi incorrectly set RANK to node rank
+cd /mnt/shared-storage-gpfs2/lijiahang1/jobs/upet
+export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/envs/pet/bin:$PATH"
+
+# --------------- Distributed Setting ---------------
+
+NODE_COUNT=${NODE_COUNT:-1}
+NODE_RANK=${NODE_RANK:-0}
 export WORLD_SIZE=$(( NPROC_PER_NODE * NODE_COUNT ))
 
 for (( i=0; i<NPROC_PER_NODE; i++ )); do
