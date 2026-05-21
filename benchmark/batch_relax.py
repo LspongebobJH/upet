@@ -203,7 +203,7 @@ class BatchRelaxer(object):
                     self.is_active_instance[idx] = False
                     self.total_converged += 1
                     if self.total_converged % 10 == 0:
-                        # logger.info(f"Relaxed {self.total_converged} structures.") # jiahang: debug
+                        # logger.info(f"Relaxed {self.total_converged} structures.")
                         print(f"Relaxed {self.total_converged} structures.")
                     self.final_atoms[opt.atoms.info["structure_index"]] = opt.atoms.copy()
                     if converged and over_max_steps:
