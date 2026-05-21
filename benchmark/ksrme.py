@@ -67,11 +67,13 @@ class KappaSRMERunner:
         save_dir: str,
         atom_disp: float,
         slice_tag: str | None = None,
+        non_conservative: bool = False,
 
     ) -> None:
         self.seed = seed
         self.ckpt_path = ckpt_path
         self.save_dir = save_dir
+        self.non_conservative = non_conservative
         self.atom_disp = atom_disp
         self.slice_tag = slice_tag
 
@@ -93,7 +95,8 @@ class KappaSRMERunner:
             # model="pet-oam-xl", 
             checkpoint_path=self.ckpt_path,
             version="1.0.0", 
-            device='cuda'
+            device='cuda',
+            non_conservative=self.non_conservative,
         )
 
         force_results: dict[str, dict[str, Any]] = {}
@@ -309,6 +312,8 @@ def main():
     parser.add_argument("--save_dir", type=str, default="test_phonon", help="Path for the save directory")
     parser.add_argument("--distributed", default=False, action="store_true", help="Whether to run in distributed mode")
     parser.add_argument("--slice", type=str, default=None, help="Optional slice of the dataset to run on, in the format 'start_end'")
+
+    parser.add_argument("--non_conservative", action="store_true", help="Whether to use non-conservative version of the model (if supported)")
     args = parser.parse_args()
     
     atoms_list = read(
@@ -344,6 +349,7 @@ def main():
         save_dir=args.save_dir,
         atom_disp=0.03,
         slice_tag=args.slice,
+        non_conservative=args.non_conservative,
     )
 
     runner.run(atoms_list=atoms_list)
