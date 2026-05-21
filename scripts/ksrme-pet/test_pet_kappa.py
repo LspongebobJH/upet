@@ -31,38 +31,6 @@ from matbench_discovery.phonons import KappaCalcParams
 local_rank = int(os.getenv("LOCAL_RANK", "0"))
 world_size = int(os.getenv("WORLD_SIZE", "1"))
 
-# Model configuration
-module_dir = os.path.dirname(__file__)
-model_name = "pet"
-model_variant = "oam-xl-v1.0.0"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-v1.0.0.ckpt`
-precision = "float64"
-device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
-dtype = torch.float64 if precision == "float64" else torch.float32
-# model = load_atomistic_model(f"{model_name}-{model_variant}.pt") # jiahang: debug
-model = load_atomistic_model(f"/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-oam-xl-v1.0.0.pt")
-model.capabilities().dtype = precision
-model = model.to(dtype=dtype, device=device)
-calc = MetatomicCalculator(model, device=device, non_conservative=False)
-# calc = SymmetrizedCalculator(calc, batch_size=1, include_inversion=False) # jiahang: debug, since buggy to use symmetrized one in calculate_fc2_set(), which assumes using MetatomicCalculator.
-batch_size = 1
-
-# Relaxation parameters
-ase_optimizer = "FIRE"
-ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
-max_steps = 300
-fmax = 1e-4  # Run until the forces are smaller than this in eV/A
-
-# Symmetry parameters
-symprec = 1e-5  # symmetry precision for enforcing relaxation and conductivity calcs
-enforce_relax_symm = True  # Enforce symmetry with during relaxation if broken
-# Conductivity to be calculated if symmetry group changed during relaxation
-conductivity_broken_symm = False
-save_forces = True  # Save force sets to file
-temperatures: list[float] = [300]
-displacement_distance = 0.03
-ignore_imaginary_freqs = True
-
-# Task splitting:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -70,6 +38,13 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="Slice atoms_list with START_END semantics, e.g. 0_11 selects samples 0 through 10.",
+    )
+    parser.add_argument(
+        "--non_conservative",
+        action="store_true",
+        default=False,
+        help="Whether to use a non-conservative version of the model for force calculations. Default is False."
+        
     )
     return parser.parse_args()
 
@@ -91,8 +66,44 @@ def parse_data_slice(data_slice: str, num_samples: int) -> tuple[int, int]:
 
     return start, end
 
-
 args = parse_args()
+
+# Model configuration
+module_dir = os.path.dirname(__file__)
+model_name = "pet"
+if args.non_conservative:
+    model_variant = "oam-xl-v1.0.0-nc"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-nc-v1.0.0.ckpt`
+else:
+    model_variant = "oam-xl-v1.0.0"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-v1.0.0.ckpt`
+
+precision = "float64"
+device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
+dtype = torch.float64 if precision == "float64" else torch.float32
+# model = load_atomistic_model(f"{model_name}-{model_variant}.pt") # jiahang: debug
+model = load_atomistic_model(f"/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/pet-oam-xl-v1.0.0.pt")
+model.capabilities().dtype = precision
+model = model.to(dtype=dtype, device=device)
+calc = MetatomicCalculator(model, device=device, non_conservative=args.non_conservative)
+# calc = SymmetrizedCalculator(calc, batch_size=1, include_inversion=False) # jiahang: debug, since buggy to use symmetrized one in calculate_fc2_set(), which assumes using MetatomicCalculator.
+batch_size = 1
+
+# Relaxation parameters
+ase_optimizer = "FIRE"
+ase_filter: Literal["frechet", "exp"] = "frechet"  # recommended filter
+max_steps = 300
+fmax = 1e-4  # Run until the forces are smaller than this in eV/A
+
+# Symmetry parameters
+symprec = 1e-5  # symmetry precision for enforcing relaxation and conductivity calcs
+enforce_relax_symm = True  # Enforce symmetry with during relaxation if broken
+# Conductivity to be calculated if symmetry group changed during relaxation
+conductivity_broken_symm = False
+save_forces = True  # Save force sets to file
+temperatures: list[float] = [300]
+displacement_distance = 0.03
+ignore_imaginary_freqs = True
+
+# Task splitting:
 data_slice = args.data_slice
 
 job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
