@@ -9,11 +9,11 @@ ignore_imaginary_freqs = True
 kappa_dirs = [
     Path(
         "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/"
-        "pet-oam-xl-v1.0.0-2026-05-21-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=0_52"
+        "pet-oam-xl-v1.0.0-nc-2026-05-21-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=0_52"
     ),
     Path(
         "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/"
-        "pet-oam-xl-v1.0.0-2026-05-21-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=52_103"
+        "pet-oam-xl-v1.0.0-nc-2026-05-21-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=52_103"
     ),
 ]
 

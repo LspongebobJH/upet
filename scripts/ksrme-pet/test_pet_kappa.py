@@ -40,6 +40,13 @@ def parse_args() -> argparse.Namespace:
         help="Slice atoms_list with START_END semantics, e.g. 0_11 selects samples 0 through 10.",
     )
     parser.add_argument(
+        "--dtype",
+        type=str,
+        default="float64",
+        help="dtype, float64 or float32 (default: float64). Note that float32 may lead to worse accuracy.",
+    )
+
+    parser.add_argument(
         "--non_conservative",
         action="store_true",
         default=False,
@@ -71,12 +78,13 @@ args = parse_args()
 # Model configuration
 module_dir = os.path.dirname(__file__)
 model_name = "pet"
+model_variant = "oam-xl-v1.0.0"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-v1.0.0.ckpt`
 if args.non_conservative:
-    model_variant = "oam-xl-v1.0.0-nc"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-nc-v1.0.0.ckpt`
-else:
-    model_variant = "oam-xl-v1.0.0"  # get it with `mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-oam-xl-v1.0.0.ckpt`
+    model_variant += "-nc" 
+if args.dtype == "float32":
+    model_variant += "-float32"
 
-precision = "float64"
+precision = args.dtype
 device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
 dtype = torch.float64 if precision == "float64" else torch.float32
 # model = load_atomistic_model(f"{model_name}-{model_variant}.pt") # jiahang: debug
