@@ -88,7 +88,7 @@ Even if both artifacts nominally correspond to `pet-oam-xl-v1.0.0`, they are **n
 
 That can change predicted forces, relaxation trajectories, phonon force constants, and finally KSRME.
 
-## 3. Precision is different
+## ~~3. Precision is different~~
 
 ### PET test path
 
