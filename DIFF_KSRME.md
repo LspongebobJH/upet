@@ -44,6 +44,19 @@ Then, before computing metrics, `scripts/ksrme-pet/test_pet_kappa.py:202-205` do
 
 The same forced override also appears in `scripts/ksrme-pet/ana_ksrme_pet_imp.py:32-35`.
 
+### Option to align `test_pet_kappa.py` with the benchmark metric policy
+
+`scripts/ksrme-pet/test_pet_kappa.py` now has a `--benchmark_metric_policy` option.
+When enabled, it switches the PET test script to the benchmark-path behavior for the actual metric-policy difference in this section:
+
+- `ignore_imaginary_freqs = False`, so imaginary-frequency structures no longer force `ltc_condition = True`
+- the script no longer clears `has_imag_ph_modes` before computing metrics
+
+For `conductivity_broken_symm`, the PET and benchmark paths were already effectively the same (`False`), so that is **not** a real difference between the two pipelines.
+
+So the PET test script will skip conductivity for the same metric-policy reasons as `benchmark/ksrme.py`.
+This option only changes `test_pet_kappa.py`; `scripts/ksrme-pet/ana_ksrme_pet_imp.py` still has its own hard-coded override.
+
 ### Benchmark path
 
 In `benchmark/ksrme.py:233-257`, conductivity is only computed when:
