@@ -5,7 +5,6 @@ from pymatviz.enums import Key
 from matbench_discovery.data import DataFilesCustomized as DataFiles
 from matbench_discovery.metrics.phonons import calc_kappa_metrics_from_dfs
 
-ignore_imaginary_freqs = True
 kappa_dirs = [
     Path(
         "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/pet-oam-xl-v1.0.0-nc-float32-2026-05-22-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=0_52"
@@ -27,9 +26,9 @@ print("Computing metrics against reference data...")
 df_dft = pd.read_json(DataFiles.phonondb_pbe_103_kappa_no_nac.path).set_index(
     Key.mat_id
 )
-if ignore_imaginary_freqs:
-    # WARNING: setting has_imag_ph_modes to False to compute the metrics anyway
-    df_kappa["has_imag_ph_modes"] = False
+
+# WARNING: setting has_imag_ph_modes to False to compute the metrics anyway
+df_kappa["has_imag_ph_modes"] = False
 df_ml_metrics = calc_kappa_metrics_from_dfs(df_kappa, df_dft)
 # Compute and print summary metrics
 kappa_sre = df_ml_metrics[Key.sre].mean()
