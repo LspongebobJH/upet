@@ -12,7 +12,7 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
+# *.ipynb
 
 # Distribution / packaging
 .Python

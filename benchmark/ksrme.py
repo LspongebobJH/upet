@@ -32,7 +32,6 @@ from tqdm import tqdm
 from argparse import ArgumentParser
 import os
 
-
 from matbench_discovery import today
 from matbench_discovery.data import DataFilesCustomized as DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
@@ -87,6 +86,7 @@ class KappaSRMERunner:
         prog_bar = True
         save_forces = False  # Save force sets to file
         temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
+        is_plusminus = True  # Whether to use plus-minus displacements for fc calculations, which can improve accuracy at the cost of doubling the number of calculations. This is utilized by pet official ksrme eval codes.
 
         seed_everywhere(self.seed)
 
@@ -213,6 +213,7 @@ class KappaSRMERunner:
                     q_point_mesh=atoms.info["q_point_mesh"],
                     displacement_distance=self.atom_disp,
                     symprec=symprec,
+                    is_plusminus=is_plusminus,
                 )
 
                 # Calculate force constants and frequencies

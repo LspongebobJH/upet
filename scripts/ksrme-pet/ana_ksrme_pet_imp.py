@@ -7,17 +7,17 @@ from matbench_discovery.metrics.phonons import calc_kappa_metrics_from_dfs
 
 kappa_dirs = [
     Path(
-        "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/pet-oam-xl-v1.0.0-nc-float32-2026-05-22-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=0_52"
+        "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/pet-oam-xl-v1.0.0-ispm"
     ),
-    Path(
-        "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/pet-oam-xl-v1.0.0-nc-float32-2026-05-22-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=52_103"
-    ),
+    # Path(
+    #     "/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/pet-oam-xl-v1.0.0-nc-float32-2026-05-22-kappa-103-FIRE-dist=0.03-fmax=0.0001-symprec=1e-05-slice=52_103"
+    # ),
 ]
 
 kappa_files = [
     file_path
     for kappa_dir in kappa_dirs
-    for file_path in sorted(kappa_dir.glob("*_kappa.json.gz"))
+    for file_path in sorted(kappa_dir.glob("*.json.gz"))
 ]
 df_kappa = pd.concat([pd.read_json(file_path) for file_path in kappa_files])
 df_kappa.index.name = Key.mat_id

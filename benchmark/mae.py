@@ -8,52 +8,18 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from ase.db import connect
-from ase.io import read
+
 from ase.units import GPa
 from sklearn.metrics import mean_absolute_error
 from tqdm import tqdm
 
 from upet.calculator import UPETCalculator
-from utils import resolve_aselmdb_paths, resolve_xyz_paths, Logger
+from metatrain.utils.io import load_model as load_metatrain_model
+from tools.utils import load_eval_data, Logger
 
 rank = int(os.environ.get("RANK", 0))
 local_rank = int(os.environ.get("LOCAL_RANK", 0))
 world_size = int(os.environ.get("WORLD_SIZE", 1))
-
-
-def load_eval_data(valid_data_path):
-    if valid_data_path.endswith(".pkl"):
-        print(f"Detected pickle input: {valid_data_path}")
-        with open(valid_data_path, "rb") as f:
-            return pickle.load(f)
-
-    if valid_data_path.endswith(".xyz"):
-        xyz_paths = resolve_xyz_paths(valid_data_path)
-        print(f"Detected XYZ input with {len(xyz_paths)} file(s)")
-        eval_data = []
-        for xyz_path in tqdm(xyz_paths, desc="Loading XYZ files"):
-            atoms_list = read(xyz_path, index=":")
-            if not isinstance(atoms_list, list):
-                atoms_list = [atoms_list]
-            eval_data.extend(atoms_list)
-        print(f"Total structures in concatenated atomlist: {len(eval_data)}")
-        return eval_data
-
-    if ".aselmdb" in valid_data_path:
-        db_paths = resolve_aselmdb_paths(valid_data_path)
-        print(f"Detected ASELMDB input with {len(db_paths)} file(s)")
-        eval_data = []
-        for db_path in tqdm(db_paths, desc="Loading ASELMDB files"):
-            with connect(db_path, readonly=True, use_lock_file=False) as database:
-                eval_data.extend(row.toatoms() for row in database.select())
-        return eval_data
-
-    raise ValueError(
-        f"Unsupported evaluation data format for path: {valid_data_path}. "
-        "Expected a .pkl file, .xyz path/glob/directory, or .aselmdb path/glob."
-    )
-
 
 def save_results(args, results, logger):
     logger("\nSaving results...")

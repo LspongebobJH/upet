@@ -19,7 +19,7 @@ import pandas as pd
 import torch
 from calc_kappa import calc_kappa_for_structure
 from metatomic.torch import load_atomistic_model
-from metatomic.torch.ase_calculator import MetatomicCalculator, SymmetrizedCalculator
+from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 from pymatviz.enums import Key
 from tqdm import tqdm
 

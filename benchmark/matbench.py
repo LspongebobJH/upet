@@ -34,7 +34,7 @@ from matbench_discovery.metrics_old import stable_metrics
 from matbench_discovery.enums import MbdKey
 from batch_relax import BatchRelaxer
 from pymatviz.enums import Key
-from utils import Logger
+from tools.utils import Logger
 import torch
 from upet.calculator import UPETCalculator, get_upet
 from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
