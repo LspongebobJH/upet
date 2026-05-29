@@ -184,3 +184,5 @@ docs/build/
 
 logs/
 *.xyz
+test_data/
+=10.1

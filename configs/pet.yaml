@@ -55,3 +55,16 @@ architecture:
       method: full
       config: {}
       inherit_heads: {}
+
+# this needs specifying based on the specific dataset
+training_set:
+  systems:
+    read_from: debug/ethanol_reduced_100.xyz
+    length_unit: Angstrom
+  targets:
+    energy:
+      key: energy  # name of the target value
+      unit: eV  # unit of the target value
+
+test_set: 0.1  # 10 % of the training_set are randomly split and taken for test set
+validation_set: 0.1  # 

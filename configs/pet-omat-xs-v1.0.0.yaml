@@ -57,8 +57,9 @@ architecture:
         delta: 0.005
 
 training_set:
+
 - systems:
-    read_from: /mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/test_data/data.xyz
+    read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-300-subsampled.xyz
     length_unit: angstrom
   targets:
     energy:
@@ -83,6 +84,295 @@ training_set:
         cartesian:
           rank: 2
 
-test_set: 0.1  # 10 % of the training_set are randomly split and taken for test set
-validation_set: 0.1  # 10 % of the training_set are randomly split and for validation set
+- systems:
+    read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-1000-npt.xyz
+    length_unit: angstrom
+  targets:
+    energy:
+      key: energy
+      unit: eV
+      forces: off
+      stress: off
+      virial: off
+    non_conservative_force:
+      key: forces
+      quantity: force
+      unit: eV/A
+      per_atom: true
+      type:
+        cartesian:
+          rank: 1
+    non_conservative_stress:
+      key: stress
+      quantity: pressure
+      unit: eV/A^3
+      type:
+        cartesian:
+          rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-1000-nvt.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-3000-npt.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-3000-nvt.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-1000-subsampled.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-1000.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-300.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-500-subsampled.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-500.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+# - systems:
+#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-relax.xyz
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: energy
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: forces
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: stress
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+validation_set: 0.0
+# validation_set:
+# - systems:
+#     read_from: /tmp/omat_val_mm/
+#     length_unit: angstrom
+#   targets:
+#     energy:
+#       key: e
+#       unit: eV
+#       forces: off
+#       stress: off
+#       virial: off
+#     non_conservative_force:
+#       key: f
+#       quantity: force
+#       unit: eV/A
+#       per_atom: true
+#       type:
+#         cartesian:
+#           rank: 1
+#     non_conservative_stress:
+#       key: s
+#       quantity: pressure
+#       unit: eV/A^3
+#       type:
+#         cartesian:
+#           rank: 2
+
+test_set: 0.0
 seed: 42
+# wandb:
+#     project: pet-omat-xs-v1.0.0
