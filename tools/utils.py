@@ -27,14 +27,14 @@ def resolve_aselmdb_paths(valid_data_path):
 
 def resolve_xyz_paths(valid_data_path):
     p = Path(valid_data_path)
-    if p.is_file() and p.suffix.lower() == ".xyz":
+    if p.is_file():
         return [str(p.resolve())]
     paths = sorted(glob(valid_data_path))
-    xyz_paths = [x for x in paths if str(x).lower().endswith(".xyz")]
+    xyz_paths = [x for x in paths if "xyz" in str(x)]
     if xyz_paths:
         return xyz_paths
     if p.is_dir():
-        xyz_paths = sorted(glob(str(p / "*.xyz")))
+        xyz_paths = sorted(glob(str(p / "*xyz")))
         if xyz_paths:
             return xyz_paths
     return []
@@ -45,7 +45,7 @@ def load_eval_data(valid_data_path):
         with open(valid_data_path, "rb") as f:
             return pickle.load(f)
 
-    if valid_data_path.endswith(".xyz"):
+    if 'xyz' in valid_data_path:
         xyz_paths = resolve_xyz_paths(valid_data_path)
         print(f"Detected XYZ input with {len(xyz_paths)} file(s)")
         eval_data = []

@@ -6,6 +6,7 @@ import random
 from glob import glob
 from pathlib import Path
 
+import ase
 import numpy as np
 import torch
 
@@ -15,6 +16,9 @@ from tqdm import tqdm
 
 from upet.calculator import UPETCalculator
 from metatrain.utils.io import load_model as load_metatrain_model
+
+import sys
+sys.path.append("/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet")
 from tools.utils import load_eval_data, Logger
 
 rank = int(os.environ.get("RANK", 0))
@@ -36,15 +40,13 @@ def save_results(args, results, logger):
     return output_file
 
 
-def eval(args, eval_data, logger):
+def eval(args, eval_data: list[ase.Atoms], logger):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
     calc = UPETCalculator(
-        # model="pet-oam-xl", 
         checkpoint_path=args.ckpt_path,
-        version="1.0.0", 
         device='cuda'
     )
 
