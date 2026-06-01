@@ -23,7 +23,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain>=2026.2,<2026.3",
+    "metatrain",
     "metatomic-ase",
     "nvalchemi-toolkit-ops==0.3.0",
     "huggingface_hub",
@@ -36,7 +36,8 @@ dependencies = [
     "ase-db-backends",
     "torch-sim-atomistic",
     "metatomic",
-    "metatomic-torchsim"
+    "metatomic-torchsim",
+    "fairchem-core",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
@@ -61,6 +62,9 @@ repository = "https://github.com/lab-cosmo/upet"
 
 
 ### ======================================================================== ###
+
+[tool.uv.sources]
+metatrain = { path = "/mnt/shared-storage-gpfs2/lijiahang1/jobs/metatrain", editable = true }
 
 [build-system]
 requires = [
