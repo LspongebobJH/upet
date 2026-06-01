@@ -18,12 +18,14 @@ from upet.calculator import UPETCalculator
 from metatrain.utils.io import load_model as load_metatrain_model
 
 import sys
+
 sys.path.append("/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet")
 from tools.utils import load_eval_data, Logger
 
 rank = int(os.environ.get("RANK", 0))
 local_rank = int(os.environ.get("LOCAL_RANK", 0))
 world_size = int(os.environ.get("WORLD_SIZE", 1))
+
 
 def save_results(args, results, logger):
     logger("\nSaving results...")
@@ -47,7 +49,8 @@ def eval(args, eval_data: list[ase.Atoms], logger):
 
     calc = UPETCalculator(
         checkpoint_path=args.ckpt_path,
-        device='cuda'
+        device="cuda",
+        non_conservative=args.non_conservative,
     )
 
     gt_e_list = []
@@ -94,14 +97,37 @@ def eval(args, eval_data: list[ase.Atoms], logger):
         mae_e = mean_absolute_error(results["gt_e_list"], results["pred_e_list"])
         mae_f = mean_absolute_error(results["gt_f_list"], results["pred_f_list"])
         mae_s = mean_absolute_error(results["gt_s_list"], results["pred_s_list"])
-        print(f"MAE Energy | MAE Forces | MAE Stress: {mae_e:.6f}, {mae_f:.6f}, {mae_s:.6f}")
+        print(
+            f"MAE Energy | MAE Forces | MAE Stress: {mae_e:.6f}, {mae_f:.6f}, {mae_s:.6f}"
+        )
+
 
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--valid_data_path", type=str, default=None, help="valid data path")
-    parser.add_argument("--seed", type=int, default=42, help="seed")
-    parser.add_argument("--device", type=str, default="cuda", help="device")
+    parser.add_argument(
+        "--valid_data_path", 
+        type=str, 
+        default=None, 
+        help="valid data path"
+    )
+    parser.add_argument(
+        "--seed", 
+        type=int, 
+        default=42, 
+        help="seed"
+    )
+    parser.add_argument(
+        "--device", 
+        type=str, 
+        default="cuda", 
+        help="device"
+    )
+    parser.add_argument(
+        "--non_conservative",
+        action="store_true",
+        help="Whether to use non-conservative forces",
+    )
     parser.add_argument(
         "--ckpt_path",
         type=str,
@@ -125,7 +151,6 @@ def main():
         action="store_true",
         help="Whether to shard evaluation data across distributed ranks using WORLD_SIZE and RANK.",
     )
-    parser.add_argument("--fidelity", type=str, default="pbe", choices=["pbe", "r2scan"], help="Fidelity level for the calculator")
     parser.add_argument(
         "--force_rerun",
         type=bool,
@@ -142,7 +167,9 @@ def main():
 
     if args.distributed:
         torch.cuda.set_device(local_rank)
-        assert args.device == "cuda", "Manual specification of device is not supported in distributed mode."
+        assert (
+            args.device == "cuda"
+        ), "Manual specification of device is not supported in distributed mode."
 
         if args.slice is not None:
             slice_start, slice_end = (int(x) for x in args.slice.split("_"))
@@ -163,7 +190,9 @@ def main():
 
         log_path = Path(args.log_path)
         log_file_name = log_path.stem
-        new_log_file_name = log_file_name.replace("slice_start_end", f"slice_{start}_{end}")
+        new_log_file_name = log_file_name.replace(
+            "slice_start_end", f"slice_{start}_{end}"
+        )
         new_log_path = log_path.with_name(new_log_file_name + log_path.suffix)
         args.log_path = str(new_log_path)
 

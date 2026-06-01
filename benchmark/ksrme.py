@@ -46,17 +46,21 @@ def seed_everywhere(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-rank, local_rank, group_rank, world_size = \
-    os.environ.get("RANK", "0"), \
-    os.environ.get("LOCAL_RANK", "0"), \
-    os.environ.get("GROUP_RANK", "0"), \
-    os.environ.get("WORLD_SIZE", "1")
 
-rank, local_rank, group_rank, world_size = \
-    int(rank), \
-    int(local_rank), \
-    int(group_rank), \
-    int(world_size)
+rank, local_rank, group_rank, world_size = (
+    os.environ.get("RANK", "0"),
+    os.environ.get("LOCAL_RANK", "0"),
+    os.environ.get("GROUP_RANK", "0"),
+    os.environ.get("WORLD_SIZE", "1"),
+)
+
+rank, local_rank, group_rank, world_size = (
+    int(rank),
+    int(local_rank),
+    int(group_rank),
+    int(world_size),
+)
+
 
 class KappaSRMERunner:
     def __init__(
@@ -67,7 +71,7 @@ class KappaSRMERunner:
         atom_disp: float,
         slice_tag: str | None = None,
         non_conservative: bool = False,
-
+        is_plusminus: bool = False,
     ) -> None:
         self.seed = seed
         self.ckpt_path = ckpt_path
@@ -75,6 +79,7 @@ class KappaSRMERunner:
         self.non_conservative = non_conservative
         self.atom_disp = atom_disp
         self.slice_tag = slice_tag
+        self.is_plusminus = is_plusminus
 
     def run(self, atoms_list: list) -> None:
         # Relaxation parameters
@@ -86,16 +91,16 @@ class KappaSRMERunner:
         prog_bar = True
         save_forces = False  # Save force sets to file
         temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
-        is_plusminus = True  # Whether to use plus-minus displacements for fc calculations, which can improve accuracy at the cost of doubling the number of calculations. This is utilized by pet official ksrme eval codes.
+        is_plusminus = self.is_plusminus  # Whether to use plus-minus displacements for fc calculations, which can improve accuracy at the cost of doubling the number of calculations. This is utilized by pet official ksrme eval codes.
 
         seed_everywhere(self.seed)
 
         # Setup model and calculator
         calculator = UPETCalculator(
-            # model="pet-oam-xl", 
+            # model="pet-oam-xl",
             checkpoint_path=self.ckpt_path,
-            version="1.0.0", 
-            device='cuda',
+            version="1.0.0",
+            device="cuda",
             non_conservative=self.non_conservative,
         )
 
@@ -107,9 +112,7 @@ class KappaSRMERunner:
         )
 
         test_metrics = {}
-        save_dir = (
-            Path(self.save_dir)
-        )
+        save_dir = Path(self.save_dir)
         (save_dir).mkdir(parents=True, exist_ok=True)
 
         # Log run parameters
@@ -285,7 +288,7 @@ class KappaSRMERunner:
             kappa_results[mat_id] = (
                 info_dict | relax_dict | freqs_dict | kappa_dict | err_dict
             )
-        
+
         elapsed = time.time() - start_time
         test_metrics["running_time"] = elapsed
 
@@ -298,8 +301,7 @@ class KappaSRMERunner:
 
         if save_forces:
             force_out_path = (
-                f"{save_dir}/{today}-kappa-103-"
-                f"force-sets-{self.slice_tag}.json.gz"
+                f"{save_dir}/{today}-kappa-103-" f"force-sets-{self.slice_tag}.json.gz"
             )
             df_force = pd.DataFrame(force_results).T
             df_force.index.name = Key.mat_id
@@ -309,14 +311,43 @@ class KappaSRMERunner:
 
 def main():
     parser = ArgumentParser(description="Benchmark phonon calculations with KappaSRME")
-    parser.add_argument("--ckpt_path", type=str, required=True, help="Path to the model checkpoint file")
-    parser.add_argument("--save_dir", type=str, default="test_phonon", help="Path for the save directory")
-    parser.add_argument("--distributed", default=False, action="store_true", help="Whether to run in distributed mode")
-    parser.add_argument("--slice", type=str, default=None, help="Optional slice of the dataset to run on, in the format 'start_end'")
+    parser.add_argument(
+        "--ckpt_path", 
+        type=str, 
+        required=True, 
+        help="Path to the model checkpoint file"
+    )
+    parser.add_argument(
+        "--save_dir",
+        type=str,
+        default="test_phonon",
+        help="Path for the save directory",
+    )
+    parser.add_argument(
+        "--distributed",
+        default=False,
+        action="store_true",
+        help="Whether to run in distributed mode",
+    )
+    parser.add_argument(
+        "--slice",
+        type=str,
+        default=None,
+        help="Optional slice of the dataset to run on, in the format 'start_end'",
+    )
 
-    parser.add_argument("--non_conservative", action="store_true", help="Whether to use non-conservative version of the model (if supported)")
+    parser.add_argument(
+        "--non_conservative",
+        action="store_true",
+        help="Whether to use non-conservative version of the model (if supported)",
+    )
+    parser.add_argument(
+        "--is_plusminus",
+        action="store_true",
+        help="whether to use minus-plus displacements for fc calculations, which can improve accuracy at the cost of doubling the number of calculations. This must be enabled to reproduce official pet ksrme eval results.",
+    )
     args = parser.parse_args()
-    
+
     atoms_list = read(
         DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
     )
@@ -324,7 +355,9 @@ def main():
     if args.distributed:
         torch.cuda.set_device(local_rank)
         if args.slice is not None:
-            warnings.warn(f"Distributed evaluation is only conducted in slice {args.slice}")
+            warnings.warn(
+                f"Distributed evaluation is only conducted in slice {args.slice}"
+            )
             slice_start, slice_end = (int(x) for x in args.slice.split("_"))
             sliced_num_samples = slice_end - slice_start
             num_samples_per_proc = (sliced_num_samples + world_size - 1) // world_size
@@ -351,9 +384,11 @@ def main():
         atom_disp=0.03,
         slice_tag=args.slice,
         non_conservative=args.non_conservative,
+        is_plusminus=args.is_plusminus,
     )
 
     runner.run(atoms_list=atoms_list)
+
 
 if __name__ == "__main__":
     main()
