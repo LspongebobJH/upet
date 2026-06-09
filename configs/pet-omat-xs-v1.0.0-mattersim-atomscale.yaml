@@ -36,15 +36,14 @@ architecture:
       non_conservative_stress: 0.01458056075
     # distributed: True
     distributed: False
-    num_epochs: 1000000
-    warmup_fraction: 0.1
+    num_epochs: 10
+    warmup_fraction: 0.0
     learning_rate: 2e-4
-    batch_size: 3000
+    batch_size: 2048
     validation_batch_size: 8192
     num_workers: 8
     # num_workers: 0
-    # per_structure_targets: ["non_conservative_stress"]
-    per_structure_targets: ["energy", "non_conservative_stress"]
+    per_structure_targets: ["non_conservative_stress"]
     loss:
       energy:
         weight: 0.01

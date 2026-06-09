@@ -32,9 +32,9 @@ def h200_full_vram_400w_no_oom():
     torch.cuda.synchronize()
 
     used_gb = torch.cuda.memory_allocated() / 1024**3
-    print(f"✅ H200 VRAM Used: {used_gb:.2f}/{total_gb:.2f} GB (FULL)")
-    print(f"✅ NO extra tensors | NO OOM risk")
-    print(f"🚀 400W power loop started...\n")
+    # print(f"✅ H200 VRAM Used: {used_gb:.2f}/{total_gb:.2f} GB (FULL)")
+    # print(f"✅ NO extra tensors | NO OOM risk")
+    # print(f"🚀 400W power loop started...\n")
 
     # INFINITE IN-PLACE COMPUTE (0 new VRAM allocated)
     # Uses Tensor Cores, max power, NO new memory

@@ -4,6 +4,8 @@ set -ex
 # --------------- Arguments ---------------
 NON_CONSERVATIVE=false
 MODEL_VARIANT="oam-xl"
+CHECKPOINT=""
+NPROC_PER_NODE=8
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --non_conservative)
@@ -12,6 +14,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --model_variant)
             MODEL_VARIANT="$2"
+            shift 2
+            ;;
+        --checkpoint)
+            CHECKPOINT="$2"
+            shift 2
+            ;;
+        --nproc_per_node)
+            NPROC_PER_NODE="$2"
             shift 2
             ;;
         *)
@@ -30,7 +40,7 @@ export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/envs/pet/bin:$PATH"
 
 # --------------- Distributed Setting ---------------
 
-NPROC_PER_NODE=8
+
 NODE_COUNT=${NODE_COUNT:-1}
 NODE_RANK=${NODE_RANK:-0}
 export WORLD_SIZE=$(( NPROC_PER_NODE * NODE_COUNT ))
@@ -38,7 +48,11 @@ export WORLD_SIZE=$(( NPROC_PER_NODE * NODE_COUNT ))
 DATASET=/mnt/shared-storage-user/lijiahang/datasets/non_equi_test_data/data.aselmdb
 DATASET_NAME="non_equi_test_data"
 MODEL_NAME="pet-${MODEL_VARIANT}-v1.0.0"
-CKPT_PATH=/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/${MODEL_NAME}.ckpt
+if [[ -n "$CHECKPOINT" ]]; then
+    CKPT_PATH=${CHECKPOINT}
+else
+    CKPT_PATH=/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/${MODEL_NAME}.ckpt
+fi
 CURRENT_DATE=$(date +%Y-%m-%d)
 LOG_DIR=/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/mae/${MODEL_NAME}-${DATASET_NAME}-${CURRENT_DATE}
 

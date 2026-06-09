@@ -39,9 +39,12 @@ architecture:
     num_epochs: 10
     warmup_fraction: 0.1
     learning_rate: 2e-4
-    checkpoint_interval: 1
-    batch_size: 4
-    per_structure_targets: ["non_conservative_stress"]
+    batch_size: 2048
+    validation_batch_size: 8192
+    num_workers: 8
+    # num_workers: 0
+    # per_structure_targets: ["non_conservative_stress"]
+    per_structure_targets: ["energy", "non_conservative_stress"]
     loss:
       energy:
         weight: 0.01
@@ -52,14 +55,13 @@ architecture:
         type: huber
         delta: 0.010
       non_conservative_stress:
-        weight: 0.01
+        weight: 1.0
         type: huber
         delta: 0.005
 
 training_set:
-
-- systems:
-    read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-300-subsampled.xyz
+  systems:
+    read_from: /mnt/shared-storage-user/lijiahang/jielan-datasets/omat_compressed/**/*.aselmdb
     length_unit: angstrom
   targets:
     energy:
@@ -84,18 +86,19 @@ training_set:
         cartesian:
           rank: 2
 
-- systems:
-    read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-1000-npt.xyz
+validation_set:
+  systems:
+    read_from: /mnt/shared-storage-user/lijiahang/datasets/non_equi_test_data/data.aselmdb
     length_unit: angstrom
   targets:
     energy:
-      key: energy
+      key: e
       unit: eV
       forces: off
       stress: off
       virial: off
     non_conservative_force:
-      key: forces
+      key: f
       quantity: force
       unit: eV/A
       per_atom: true
@@ -103,276 +106,14 @@ training_set:
         cartesian:
           rank: 1
     non_conservative_stress:
-      key: stress
+      key: s
       quantity: pressure
       unit: eV/A^3
       type:
         cartesian:
           rank: 2
 
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-1000-nvt.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-3000-npt.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/aimd-from-PBE-3000-nvt.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-1000-subsampled.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-1000.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-300.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-500-subsampled.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-500.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-# - systems:
-#     read_from: /mnt/shared-storage-gpfs2/lijiahang1/datasets/omat24-1m/omat24_1M_251210/train/xyz_files/rattled-relax.xyz
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: energy
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: forces
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: stress
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-validation_set: 0.0
-# validation_set:
-# - systems:
-#     read_from: /tmp/omat_val_mm/
-#     length_unit: angstrom
-#   targets:
-#     energy:
-#       key: e
-#       unit: eV
-#       forces: off
-#       stress: off
-#       virial: off
-#     non_conservative_force:
-#       key: f
-#       quantity: force
-#       unit: eV/A
-#       per_atom: true
-#       type:
-#         cartesian:
-#           rank: 1
-#     non_conservative_stress:
-#       key: s
-#       quantity: pressure
-#       unit: eV/A^3
-#       type:
-#         cartesian:
-#           rank: 2
-
-test_set: 0.0
+# test_set: 0.0
 seed: 42
 # wandb:
 #     project: pet-omat-xs-v1.0.0

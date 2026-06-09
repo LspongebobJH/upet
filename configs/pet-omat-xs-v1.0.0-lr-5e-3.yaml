@@ -36,10 +36,10 @@ architecture:
       non_conservative_stress: 0.01458056075
     # distributed: True
     distributed: False
-    num_epochs: 1000000
+    num_epochs: 10
     warmup_fraction: 0.1
-    learning_rate: 2e-4
-    batch_size: 3000
+    learning_rate: 5e-3
+    batch_size: 2048
     validation_batch_size: 8192
     num_workers: 8
     # num_workers: 0

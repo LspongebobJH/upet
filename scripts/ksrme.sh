@@ -4,6 +4,7 @@ set -ex
 # --------------- Arguments ---------------
 NON_CONSERVATIVE=false
 MODEL_VARIANT="oam-xl"
+CHECKPOINT=""
 IS_PLUSMINUS=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -13,6 +14,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --model_variant)
             MODEL_VARIANT="$2"
+            shift 2
+            ;;
+        --checkpoint)
+            CHECKPOINT="$2"
             shift 2
             ;;
         --is_plusminus)
@@ -40,8 +45,13 @@ NODE_COUNT=${NODE_COUNT:-1}
 NODE_RANK=${NODE_RANK:-0}
 export WORLD_SIZE=$(( NPROC_PER_NODE * NODE_COUNT ))
 
+if 
 MODEL_NAME="pet-${MODEL_VARIANT}-v1.0.0"
-CKPT_PATH=/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/${MODEL_NAME}.ckpt
+if [[ -n "$CHECKPOINT" ]]; then
+    CKPT_PATH=${CHECKPOINT}
+else
+    CKPT_PATH=/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/checkpoints/${MODEL_NAME}.ckpt
+fi
 CURRENT_DATE=$(date +%Y-%m-%d)
 LOG_DIR=/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/logs/ksrme/${MODEL_NAME}-${CURRENT_DATE}
 
@@ -67,7 +77,5 @@ for (( i=0; i<NPROC_PER_NODE; i++ )); do
     export LOCAL_RANK=${i}
     export RANK=$(( NODE_RANK * NPROC_PER_NODE + LOCAL_RANK ))
     python benchmark/ksrme.py \
-        "${args[@]}" &
-
-    
+        "${args[@]}" &    
 done
