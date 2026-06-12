@@ -1,4 +1,5 @@
-NPROC_PER_NODE=8
+export CUDA_VISIBLE_DEVICES=1,2
+NPROC_PER_NODE=2
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --nproc_per_node)

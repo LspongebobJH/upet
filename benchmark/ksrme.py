@@ -132,6 +132,7 @@ class KappaSRMERunner:
             "temperatures": temperatures,
             "displacement_distance": self.atom_disp,
             "n_structures": len(atoms_list),
+            "is_plusminus": is_plusminus,
         }
         with open(save_dir / "run_params.json", mode="w") as file:
             json.dump(run_params, file, indent=4)

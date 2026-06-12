@@ -6,6 +6,8 @@ NON_CONSERVATIVE=false
 MODEL_VARIANT="oam-xl"
 CHECKPOINT=""
 IS_PLUSMINUS=false
+NPROC_PER_NODE=8
+MISC=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --non_conservative)
@@ -24,6 +26,18 @@ while [[ $# -gt 0 ]]; do
             IS_PLUSMINUS=true
             shift
             ;;
+        --nproc_per_node)
+            NPROC_PER_NODE="$2"
+            shift 2
+            ;;
+        --cuda_visible_devices)
+            export CUDA_VISIBLE_DEVICES="$2"
+            shift 2
+            ;;
+        --misc)
+            MISC="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown argument: $1"
             exit 1
@@ -40,12 +54,10 @@ export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/envs/pet/bin:$PATH"
 
 # --------------- Distributed Setting ---------------
 
-NPROC_PER_NODE=8
 NODE_COUNT=${NODE_COUNT:-1}
 NODE_RANK=${NODE_RANK:-0}
 export WORLD_SIZE=$(( NPROC_PER_NODE * NODE_COUNT ))
 
-if 
 MODEL_NAME="pet-${MODEL_VARIANT}-v1.0.0"
 if [[ -n "$CHECKPOINT" ]]; then
     CKPT_PATH=${CHECKPOINT}
@@ -66,6 +78,9 @@ fi
 if [ "$IS_PLUSMINUS" = true ]; then
     args+=(--is_plusminus)
     LOG_DIR=${LOG_DIR}-is_plusminus
+fi
+if [ -n "$MISC" ]; then
+    LOG_DIR=${LOG_DIR}-${MISC}
 fi
 
 args+=(--save_dir ${LOG_DIR})
