@@ -51,10 +51,10 @@ def analyze_training_log(log_path):
                     elif 'validation energy MAE (per atom):' in part:
                         e_mae = float(part.split(':')[1].strip().split()[0])
                         energy_mae.append(e_mae)
-                    elif 'non_conservative_force RMSE' in part:
+                    elif 'non_conservative_forces RMSE' in part:
                         f_rmse = float(part.split(':')[1].strip().split()[0])
                         force_rmse.append(f_rmse)
-                    elif 'non_conservative_force MAE' in part:
+                    elif 'non_conservative_forces MAE' in part:
                         f_mae = float(part.split(':')[1].strip().split()[0])
                         force_mae.append(f_mae)
 
