@@ -3,6 +3,8 @@ set -ex
 
 CONFIG_PATH=""
 RESTART=""
+RESTART_LR=""
+WARMUP=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -12,6 +14,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --config)
             CONFIG_PATH="$2"
+            shift 2
+            ;;
+        --restart_lr)
+            RESTART_LR="$2"
+            shift 2
+            ;;
+        --warmup)
+            WARMUP="$2"
             shift 2
             ;;
         *)
@@ -24,13 +34,13 @@ done
 export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
 export PATH=/usr/local/nvidia/bin:$PATH
 export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/envs/pet/bin:$PATH"
+export OUTPUTS_DIR="/mnt/shared-storage-gpfs2/lijiahang1/jobs/upet/outputs/$(date +%Y-%m-%d/%H-%M-%S)"
 
 cd /mnt/shared-storage-gpfs2/lijiahang1/jobs/upet
-BRANCH=main
-
-WORKTREE=/tmp/job_$(date +%s)
-git worktree add --detach $WORKTREE $BRANCH
-cd $WORKTREE
+# BRANCH=jiahang
+# WORKTREE=/mnt/shared-storage-gpfs2/lijiahang1/tmp/job_$(date +%s)
+# git worktree add --detach $WORKTREE $BRANCH
+# cd $WORKTREE
 
 NNODES="${NODE_COUNT:-1}"
 NODE_RANK="${NODE_RANK:-0}"
@@ -51,6 +61,13 @@ common_args=(
 
 if [ -n "$RESTART" ]; then
     common_args+=(--restart "$RESTART")
+    if [ -n "$RESTART_LR" ]; then
+        common_args+=(-r architecture.training.restart_lr="$RESTART_LR")
+    fi
+fi
+
+if [ -n "$WARMUP" ]; then
+    common_args+=(-r architecture.training.warmup_fraction="$WARMUP")
 fi
 
 if [ "${NPROC_PER_NODE}" = "1" ]; then

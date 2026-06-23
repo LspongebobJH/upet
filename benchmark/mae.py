@@ -5,7 +5,7 @@ import pickle
 import random
 from glob import glob
 from pathlib import Path
-
+from time import time
 import ase
 import numpy as np
 import torch
@@ -60,13 +60,20 @@ def eval(args, eval_data: list[ase.Atoms], logger):
     gt_s_list = []
     pred_s_list = []
 
+    time_list = []
     for i, atoms in enumerate(tqdm(eval_data, desc="Evaluating on structures")):
         gt_energy = atoms.get_potential_energy() / len(atoms)
         gt_forces = atoms.get_forces()
         gt_stress = atoms.get_stress(voigt=False) / GPa
 
         atoms.set_calculator(calc)
+        st = time()
         pred_energy = atoms.get_potential_energy() / len(atoms)
+        period = time() - st
+
+        if i > 30:
+            time_list.append(period)
+
         pred_forces = atoms.get_forces()
         pred_stress = atoms.get_stress(voigt=False) / GPa
 
@@ -100,6 +107,10 @@ def eval(args, eval_data: list[ase.Atoms], logger):
         print(
             f"MAE Energy | MAE Forces | MAE Stress: {mae_e:.6f}, {mae_f:.6f}, {mae_s:.6f}"
         )
+        if time_list:
+            mean_time = np.mean(time_list)
+            std_time = np.std(time_list)
+            print(f"Mean time: {mean_time:.4f}±{std_time:.4f}s")
 
 
 def main():
@@ -108,7 +119,7 @@ def main():
     parser.add_argument(
         "--valid_data_path", 
         type=str, 
-        default=None, 
+        default="/mnt/shared-storage-gpfs2/ailab-omnimat-shared/lijiahang/datasets/omat24-1m-demo/omat24_1M_251210/*/*/*.aselmdb", 
         help="valid data path"
     )
     parser.add_argument(
