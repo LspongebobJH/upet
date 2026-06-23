@@ -23,7 +23,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain",
+    # "metatrain",
     "metatomic-ase",
     "nvalchemi-toolkit-ops==0.3.0",
     "huggingface_hub",
@@ -37,7 +37,7 @@ dependencies = [
     "torch-sim-atomistic",
     "metatomic",
     "metatomic-torchsim",
-    "fairchem-core",
+    "fairchem-core==2.20.0",
 ]
 
 keywords = ["machine learning", "molecular modeling"]

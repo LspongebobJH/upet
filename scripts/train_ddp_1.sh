@@ -1,6 +1,26 @@
 #!/usr/bin/env bash
 set -ex
 
+CONFIG_PATH=""
+RESTART=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --restart)
+            RESTART="$2"
+            shift 2
+            ;;
+        --config)
+            CONFIG_PATH="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            exit 1
+            ;;
+    esac
+done
+
 export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
 export PATH=/usr/local/nvidia/bin:$PATH
 export PATH="/mnt/shared-storage-user/lijiahang/miniconda3/envs/pet/bin:$PATH"
@@ -24,10 +44,14 @@ export NCCL_SOCKET_IFNAME="${NCCL_SOCKET_IFNAME:-bond0}"
 common_args=(
     main.py
     train
-    configs/pet-omat-xl-v1.0.0-lr-1e-3.yaml
+    "${CONFIG_PATH:-configs/pet-omat-xl-v1.0.0-lr-1e-3.yaml}"
     -r architecture.training.distributed=True
     -r architecture.training.distributed_port=${MASTER_PORT}
 )
+
+if [ -n "$RESTART" ]; then
+    common_args+=(--restart "$RESTART")
+fi
 
 if [ "${NPROC_PER_NODE}" = "1" ]; then
     python "${common_args[@]}" &
